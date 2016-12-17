@@ -4,14 +4,12 @@ eduxator
 Interactive command line interface for `Edux <https://edux.fit.cvut.cz/>`_ classification. 
 This is only useful for teachers from `Faculty of Information Technology at Czech Technical University in Prague <http://fit.cvut.cz/en>`_.
 
-Currently, eduxator is in pre-alpha state and **does not work yet**.
+The application is currently being developed as part of my semestral project for MI-PYT in 2016/2017. As of now, eduxator is in pre-alpha state and **does not work yet**.
 
 The idea
 --------
 
-*Here I try to explain what eduxator will do. I'll use present tense so it will be easier in the future to keep the text here.*
-
-Eduxator is a command line tool with interactive console. It's purpose is to give points to students and save those points to Edux. In order to tell eduxator what kind of points are you about to give, you should provide some kind of information, such as:
+Eduxator is primarily a command line tool with an interactive console. It's purpose is to give points to students and save those points to Edux. In order to tell eduxator what kind of points are you about to give, you should provide some kind of information, such as:
 
 - course name (e.g. BI-3DT, BI-SAP...)
 - what kind of students are we dealing with (e.g. fulltime, parttime)
@@ -76,3 +74,17 @@ Note that BI-3DT has only fulltime tutorials, so this information is omitted wit
     > [Ctrl+D]
 
 Each time, before you add, subtract or change points, the real value form Edux is obtained, so multiple teachers should be able to use eduxator in parallel. However, the ``undo`` feature sets the value to the last known value before the command was run, so it might be dangerous in parallel environment. Especially if you do several of them or you don't run it immediately after the previous command.
+
+Roadmap
+-------
+
+By the end of January 2017, Eduxator will include:
+
+- The interactive command-line interface described above
+- A non-interactive command providing the same functionality (switching to interactive mode when missing parameters)
+- A library interface
+- A simple REST API in Flask
+- Username and password authentication instead of cookies
+- Unit tests using Betamax
+- Documentation
+
