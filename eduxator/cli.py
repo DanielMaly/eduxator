@@ -8,18 +8,54 @@ from eduxator import io
 
 
 class CLI:
-    def __init__(self):
-        self.prompt = '> '
-        self.readline_setup()
-        self.cookie_setup()
-        self.context_setup()
-        self.exit()
+
+    EXITED = 0
+    INITIALIZING_COOKIE = 1
+    SELECTING_COURSE = 2
+    SELECTING_LESSON = 3
+    SELECTING_COLUMN = 4
+    SELECTING_USERNAME = 5
+    SETTING_CLASSIFICATION = 6
+
+    def __init__(self, *args, **kwargs):
+        self.state = CLI.INITIALIZING_COOKIE
+
+        self.course = None
+        self.lesson = None
+        self.lesson_filter = None
+        self.column = None
+        self.student_username = None
+
+        self.run()
+
+    def get_prompt(self):
+        if self.state < CLI.SELECTING_LESSON:
+            return '> '
+        else:
+            prompt_string = ''
+
+            if self.state == CLI.SELECTING_LESSON:
+                prompt_string = self.course
+                if self.lesson_filter is not None:
+                    prompt_string += '({})'.format(self.lesson_filter)
+
+            if self.state == CLI.SELECTING_COLUMN:
+                prompt_string = self.course + ' ' + self.lesson
+
+            if self.state == CLI.SELECTING_USERNAME:
+                prompt_string = self.course + ' ' + self.lesson + ' ' + self.column
+
+            if self.state == CLI.SETTING_CLASSIFICATION:
+                prompt_string = self.course + ' ' + self.lesson + ' ' + self.column + ' ' + self.student_username
+
+            return '[{}{}{}{}]> '.format(colorama.Fore.BLUE, colorama.Style.BRIGHT,
+                                  prompt_string, colorama.Style.RESET_ALL)
 
     def readline_setup(self):
         self.histfile = os.path.join(os.path.expanduser('~'), '.eduxator_history')
         try:
             readline.read_history_file(self.histfile)
-        except FileNotFoundError:
+        except (FileNotFoundError, PermissionError):
             pass
 
         for item in ['tab: complete',
@@ -39,6 +75,37 @@ class CLI:
         # Do not treat dash as delimiter in tab completion
         readline.set_completer_delims(readline.get_completer_delims().replace('-', ''))
 
+    def run(self):
+
+        # This function will receive candidates and apply them to each call
+        # After they have been applied once, they will be emptied
+
+        while self.state != CLI.EXITED:
+
+            if self.state == CLI.INITIALIZING_COOKIE:
+                self.cookie_setup()
+
+            elif self.state == CLI.SELECTING_COURSE:
+                self.determine_course([])  # TODO: Take into account possible candidates
+
+            elif self.state == CLI.SELECTING_LESSON:
+                self.determine_classpath([])
+
+            elif self.state == CLI.SELECTING_COLUMN:
+                self.determine_column([])
+
+            elif self.state == CLI.SELECTING_USERNAME:
+                pass
+
+            elif self.state == CLI.SETTING_CLASSIFICATION:
+                pass
+
+    def next(self):
+        self.state += 1
+
+    def back(self):
+        self.state -= 1
+
     def cookie_setup(self):
         try:
             self.eduxio = io.EduxIO()
@@ -50,10 +117,12 @@ class CLI:
             cookie_value = self.ask('Enter the cookie\'s value')
             self.eduxio = io.EduxIO(cookie_dict={cookie_name: cookie_value})
 
-            if self.ask_bool('Good, I feel your anger. Should I save this to ~./.edux.cookie '
+            if self.ask_bool('Good, I feel your anger. Should I save this to ~/.edux.cookie '
                              'to save you some pain later?'):
                 self.info('Saving.')
                 self.eduxio.save_cookie()
+
+        self.next()
 
     def context_setup(self):
         self.asked = False
@@ -165,7 +234,7 @@ class CLI:
 
     def input(self):
         try:
-            return input(self.prompt).rstrip()
+            return input(self.get_prompt()).rstrip()
         except KeyboardInterrupt:
             print('^C')
             return ''
