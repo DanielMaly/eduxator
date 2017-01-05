@@ -4,29 +4,29 @@ import sys
 
 import colorama
 
+from eduxator import fetch
 from eduxator import io
 
 
 class CLI:
 
     EXITED = 0
-    INITIALIZING_COOKIE = 1
+    INITIALIZING = 1
     SELECTING_COURSE = 2
     SELECTING_LESSON = 3
     SELECTING_COLUMN = 4
     SELECTING_USERNAME = 5
     SETTING_CLASSIFICATION = 6
 
-    def __init__(self, *args, **kwargs):
-        self.state = CLI.INITIALIZING_COOKIE
+    def __init__(self, edux_io, *args, **kwargs):
+        self.state = CLI.INITIALIZING
+        self.eduxio = edux_io
 
         self.course = None
         self.lesson = None
         self.lesson_filter = None
         self.column = None
         self.student_username = None
-
-        self.run()
 
     def get_prompt(self):
         if self.state < CLI.SELECTING_LESSON:
@@ -79,26 +79,29 @@ class CLI:
 
         # This function will receive candidates and apply them to each call
         # After they have been applied once, they will be emptied
+        self.readline_setup()
 
         while self.state != CLI.EXITED:
+            self.run_step()
 
-            if self.state == CLI.INITIALIZING_COOKIE:
-                self.cookie_setup()
+    def run_step(self):
+        if self.state == CLI.INITIALIZING:
+            self.cookie_setup()
 
-            elif self.state == CLI.SELECTING_COURSE:
-                self.determine_course([])  # TODO: Take into account possible candidates
+        elif self.state == CLI.SELECTING_COURSE:
+            self.determine_course([])  # TODO: Take into account possible candidates
 
-            elif self.state == CLI.SELECTING_LESSON:
-                self.determine_classpath([])
+        elif self.state == CLI.SELECTING_LESSON:
+            self.determine_classpath([])
 
-            elif self.state == CLI.SELECTING_COLUMN:
-                self.determine_column([])
+        elif self.state == CLI.SELECTING_COLUMN:
+            self.determine_column([])
 
-            elif self.state == CLI.SELECTING_USERNAME:
-                pass
+        elif self.state == CLI.SELECTING_USERNAME:
+            pass
 
-            elif self.state == CLI.SETTING_CLASSIFICATION:
-                pass
+        elif self.state == CLI.SETTING_CLASSIFICATION:
+            pass
 
     def next(self):
         self.state += 1
@@ -106,23 +109,28 @@ class CLI:
     def back(self):
         self.state -= 1
 
+    def setup_edux_access(self, authentication_type='cookie'):
+        if authentication_type == 'cookie':
+            self.cookie_setup()
+            self.next()
+
     def cookie_setup(self):
         try:
-            self.eduxio = io.EduxIO()
+            fetcher = fetch.CookieBasedEduxFetcher()
         except ValueError as ve:
             self.warn(ve)
             self.info('Please provide the name and value of your cookie from Edux. '
                       'The one where name looks like it\'s random generated is the one.')
             cookie_name = self.ask('Enter the cookie\'s name')
             cookie_value = self.ask('Enter the cookie\'s value')
-            self.eduxio = io.EduxIO(cookie_dict={cookie_name: cookie_value})
+            fetcher = fetch.CookieBasedEduxFetcher(cookie_dict={cookie_name: cookie_value})
 
             if self.ask_bool('Good, I feel your anger. Should I save this to ~/.edux.cookie '
                              'to save you some pain later?'):
                 self.info('Saving.')
-                self.eduxio.save_cookie()
+                fetcher.save_cookie()
 
-        self.next()
+        self.eduxio.fetcher = fetcher
 
     def context_setup(self):
         self.asked = False

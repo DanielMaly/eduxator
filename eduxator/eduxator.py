@@ -1,5 +1,6 @@
 import click
 from .cli import CLI
+from .io import EduxIO
 
 
 @click.command()
@@ -21,7 +22,7 @@ def run(course_identifier, class_identifier, classification_column, student_user
 
     # I'll implement this first with dummy data and test it.
     # Once the shell is complete, we'll move on to other stuff
-    CLI()
+    CLI(EduxIO()).run()
 
 
 def main():
